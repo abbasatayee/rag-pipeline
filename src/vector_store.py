@@ -4,11 +4,19 @@ Handles embedding creation and vector database management
 """
 
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Pinecone
 from langchain.schema import Document
 from typing import List
 import os
 from pinecone import Pinecone as PineconeClient, ServerlessSpec
+
+# Use the new langchain-pinecone package
+try:
+    from langchain_pinecone import Pinecone
+except ImportError:
+    raise ImportError(
+        "langchain-pinecone package is required. "
+        "Install it with: pip install langchain-pinecone"
+    )
 
 
 class VectorStore:
@@ -56,7 +64,13 @@ class VectorStore:
             )
         else:
             # Use local embeddings (sentence-transformers)
-            from langchain_community.embeddings import HuggingFaceEmbeddings
+            try:
+                from langchain_huggingface import HuggingFaceEmbeddings
+            except ImportError:
+                raise ImportError(
+                    "langchain-huggingface package is required for local embeddings. "
+                    "Install it with: pip install langchain-huggingface"
+                )
             self.embeddings = HuggingFaceEmbeddings(
                 model_name="all-MiniLM-L6-v2"
             )
@@ -123,8 +137,13 @@ class VectorStore:
                 )
             )
             print(f"Index '{self.index_name}' created successfully")
+            # Wait for index to be ready (serverless indexes initialize quickly)
+            import time
+            print("Waiting for index to be ready...")
+            time.sleep(3)  # Wait for index initialization
         
-        # Create vector store from documents
+        # Create vector store from documents using index name
+        # The new langchain-pinecone package works directly with index names
         vectorstore = Pinecone.from_documents(
             documents=documents,
             embedding=self.embeddings,
@@ -150,6 +169,8 @@ class VectorStore:
                 "Please create it first by calling create_vector_store()."
             )
         
+        # Load existing vector store using index name
+        # The new langchain-pinecone package works directly with index names
         vectorstore = Pinecone.from_existing_index(
             index_name=self.index_name,
             embedding=self.embeddings

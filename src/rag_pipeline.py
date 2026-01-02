@@ -7,9 +7,17 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
-from langchain_community.vectorstores import Pinecone
 from typing import List, Optional
 import os
+
+# Use the new langchain-pinecone package
+try:
+    from langchain_pinecone import Pinecone
+except ImportError:
+    raise ImportError(
+        "langchain-pinecone package is required. "
+        "Install it with: pip install langchain-pinecone"
+    )
 
 
 class RAGPipeline:
