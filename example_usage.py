@@ -19,29 +19,31 @@ def example_usage():
     print("Step 1: Processing PDF...")
     pdf_processor = PDFProcessor(chunk_size=1000, chunk_overlap=200)
     documents = pdf_processor.load_pdf("data/ancient-egypt.pdf")  # Replace with your PDF path
-    
     # Step 2: Create vector store
     print("\nStep 2: Creating vector store...")
-    vector_store = VectorStore(persist_directory="./chroma_db", use_openai=True)
+    vector_store = VectorStore(index_name="ancient-egypt-rag", use_openai=False)
     vectorstore = vector_store.create_vector_store(documents)
     
     # Step 3: Initialize RAG pipeline
     print("\nStep 3: Initializing RAG pipeline...")
-    rag = RAGPipeline(vectorstore, top_k=4)
     
-    # Step 4: Query the system
-    print("\nStep 4: Querying the system...")
-    questions = [
-        "What is the main topic of this document?",
-        "Summarize the key points.",
-        # Add your questions here
-    ]
+    # Option 1: Use OpenAI (default)
+    # rag = RAGPipeline(vectorstore, top_k=4)
     
-    for question in questions:
-        print(f"\nQuestion: {question}")
-        result = rag.query_with_sources(question)
-        print(f"Answer: {result['answer']}")
-        print(f"Sources: {len(result['sources'])} chunks retrieved")
+    # Option 2: Use local LM Studio
+    local_llm_base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234/v1")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "local-model")
+    rag = RAGPipeline(
+        vectorstore, 
+        top_k=4,
+        use_local_llm=True,
+        local_llm_base_url=local_llm_base_url,
+        model_name=local_llm_model
+    )
+    
+    result = rag.query_with_sources("What is the main topic of this document?")
+    print(result['answer'])
+    print(result['sources'])
 
 if __name__ == "__main__":
     example_usage()

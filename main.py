@@ -26,14 +26,18 @@ def setup_rag(pdf_path: str, rebuild: bool = False):
     # Initialize components
     pdf_processor = PDFProcessor(chunk_size=1000, chunk_overlap=200)
     vector_store = VectorStore(
-        persist_directory="./chroma_db",
-        use_openai=True
+        index_name="ancient-egypt-rag",
+        use_openai=False
     )
     
     # Check if vector store already exists
-    if not rebuild and Path("./chroma_db").exists():
-        print("Vector store already exists. Use --rebuild to recreate it.")
-        return vector_store.load_vector_store()
+    if not rebuild:
+        try:
+            vectorstore = vector_store.load_vector_store()
+            print("Vector store already exists. Use --rebuild to recreate it.")
+            return vectorstore
+        except FileNotFoundError:
+            pass  # Index doesn't exist, will create it
     
     # Load PDF(s)
     pdf_path_obj = Path(pdf_path)
@@ -48,21 +52,32 @@ def setup_rag(pdf_path: str, rebuild: bool = False):
         raise ValueError(f"Invalid PDF path: {pdf_path}")
     
     # Create vector store
-    vectorstore = vector_store.create_vector_store(documents)
+    vectorstore = vector_store.create_vector_store(documents, rebuild=rebuild)
     
     print("\n✓ RAG system setup complete!")
     return vectorstore
 
 
-def interactive_query(vectorstore):
+def interactive_query(vectorstore, use_local_llm: bool = False):
     """
     Interactive query interface
     
     Args:
         vectorstore: Vector store instance
+        use_local_llm: Whether to use local LM Studio
     """
+    # Get local LLM settings from environment
+    local_llm_base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234/v1")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "local-model")
+    
     # Initialize RAG pipeline
-    rag = RAGPipeline(vectorstore, top_k=4)
+    rag = RAGPipeline(
+        vectorstore, 
+        top_k=4,
+        use_local_llm=use_local_llm,
+        local_llm_base_url=local_llm_base_url,
+        model_name=local_llm_model if use_local_llm else None
+    )
     
     print("\n" + "="*60)
     print("RAG System Ready! Ask questions about your documents.")
@@ -92,7 +107,10 @@ def interactive_query(vectorstore):
             
         except Exception as e:
             print(f"Error: {str(e)}")
-            print("Please check your OpenAI API key and try again.\n")
+            if use_local_llm:
+                print("Please check that LM Studio is running and accessible.\n")
+            else:
+                print("Please check your OpenAI API key and try again.\n")
 
 
 def main():
@@ -114,6 +132,11 @@ def main():
         type=str,
         help="Single query to process (non-interactive mode)"
     )
+    parser.add_argument(
+        "--local-llm",
+        action="store_true",
+        help="Use local LM Studio instead of OpenAI"
+    )
     
     args = parser.parse_args()
     
@@ -124,10 +147,20 @@ def main():
         print(f"Error setting up RAG system: {str(e)}")
         return
     
+    # Get local LLM settings from environment
+    local_llm_base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234/v1")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "local-model")
+    
     # Query mode
     if args.query:
         # Single query mode
-        rag = RAGPipeline(vectorstore, top_k=4)
+        rag = RAGPipeline(
+            vectorstore, 
+            top_k=4,
+            use_local_llm=args.local_llm,
+            local_llm_base_url=local_llm_base_url,
+            model_name=local_llm_model if args.local_llm else None
+        )
         try:
             result = rag.query_with_sources(args.query)
             print("\nQuestion:", args.query)
@@ -137,7 +170,7 @@ def main():
             print(f"Error: {str(e)}")
     else:
         # Interactive mode
-        interactive_query(vectorstore)
+        interactive_query(vectorstore, use_local_llm=args.local_llm)
 
 
 if __name__ == "__main__":

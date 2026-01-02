@@ -18,15 +18,25 @@ A Retrieval-Augmented Generation (RAG) system that allows you to query PDF docum
 pip install -r requirements.txt
 ```
 
-### 2. Set Up OpenAI API Key
+### 2. Set Up API Keys
 
 Create a `.env` file in the project root:
 
 ```bash
+# Required: Pinecone API key for vector storage
+PINECONE_API_KEY=your_pinecone_api_key_here
+
+# Option 1: Use OpenAI for embeddings and LLM
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Option 2: Use local LM Studio for LLM (optional)
+LOCAL_LLM_BASE_URL=http://localhost:1234/v1
+LOCAL_LLM_MODEL=local-model
 ```
 
-Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys).
+Get your API keys from:
+- [Pinecone Console](https://app.pinecone.io/) - for vector storage
+- [OpenAI Platform](https://platform.openai.com/api-keys) - for embeddings and LLM (if not using local)
 
 ### 3. Prepare Your PDF Files
 
@@ -63,6 +73,20 @@ For a single question:
 ```bash
 python main.py --pdf path/to/your/document.pdf --query "Your question here"
 ```
+
+### Using Local LM Studio
+
+To use your local LM Studio instead of OpenAI:
+
+```bash
+# Interactive mode with local LLM
+python main.py --pdf path/to/your/document.pdf --local-llm
+
+# Single query with local LLM
+python main.py --pdf path/to/your/document.pdf --query "Your question" --local-llm
+```
+
+Make sure LM Studio is running and accessible at the configured URL (default: `http://localhost:1234/v1`).
 
 ### Rebuild Vector Store
 
@@ -103,9 +127,9 @@ python main.py --pdf ancient_egypt_history.pdf
 
 1. **PDF Processing**: Your PDF is loaded and split into smaller chunks (1000 characters with 200 character overlap)
 
-2. **Embedding Creation**: Each chunk is converted into a vector embedding using OpenAI's embedding model
+2. **Embedding Creation**: Each chunk is converted into a vector embedding using OpenAI's embedding model (or local embeddings)
 
-3. **Vector Store**: Embeddings are stored in ChromaDB for fast similarity search
+3. **Vector Store**: Embeddings are stored in Pinecone for fast similarity search
 
 4. **Query Processing**: When you ask a question:
    - Your question is converted to an embedding
@@ -118,26 +142,39 @@ python main.py --pdf ancient_egypt_history.pdf
 You can customize the system by modifying:
 
 - **Chunk size**: Edit `chunk_size` and `chunk_overlap` in `src/pdf_processor.py`
-- **Number of retrieved documents**: Edit `top_k` in `src/rag_pipeline.py`
-- **LLM model**: Change `model_name` in `RAGPipeline` initialization
-- **Embedding model**: Modify `embedding_model` in `VectorStore`
+- **Number of retrieved documents**: Edit `top_k` in `RAGPipeline` initialization
+- **LLM model**: 
+  - For OpenAI: Set `model_name` in `RAGPipeline` initialization
+  - For local LM Studio: Set `LOCAL_LLM_MODEL` in `.env` or pass `model_name` parameter
+- **Local LLM URL**: Set `LOCAL_LLM_BASE_URL` in `.env` (default: `http://localhost:1234/v1`)
+- **Embedding model**: Modify `embedding_model` in `VectorStore` initialization
+- **Pinecone index**: Change `index_name` in `VectorStore` initialization
 
 ## Troubleshooting
 
-### "OPENAI_API_KEY not found"
+### "PINECONE_API_KEY not found"
+- Make sure you've created a `.env` file with your Pinecone API key
+- Get your key from [Pinecone Console](https://app.pinecone.io/)
 
-- Make sure you've created a `.env` file with your API key
-- Check that the key is correctly formatted
+### "OPENAI_API_KEY not found"
+- This error appears if you're not using `--local-llm` flag
+- Either add `OPENAI_API_KEY` to your `.env` file or use `--local-llm` flag
+- Note: OpenAI API key is still required for embeddings even when using local LLM
+
+### Local LM Studio connection issues
+- Make sure LM Studio is running and a model is loaded
+- Check that the server is accessible at the URL specified in `LOCAL_LLM_BASE_URL`
+- Default URL is `http://localhost:1234/v1` - adjust if your LM Studio uses a different port
+- Verify the model name matches what's loaded in LM Studio
 
 ### "PDF file not found"
-
 - Verify the path to your PDF file is correct
 - Use absolute paths if relative paths don't work
 
 ### Slow processing
-
 - Large PDFs may take time to process initially
-- Subsequent queries will be fast as the vector store is cached
+- Subsequent queries will be fast as the vector store is cached in Pinecone
+- Local LLM responses may be slower than OpenAI depending on your hardware
 
 ## License
 

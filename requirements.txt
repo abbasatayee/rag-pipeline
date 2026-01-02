@@ -80,6 +80,8 @@ packaging                                25.0
 pdfminer.six                             20251107
 pdfplumber                               0.11.8
 pillow                                   11.3.0
+pinecone-client                          6.0.0
+pinecone-plugin-interface                0.0.7
 pip                                      25.3
 posthog                                  5.4.0
 propcache                                0.4.1

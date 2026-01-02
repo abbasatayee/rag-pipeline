@@ -7,8 +7,8 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
-from langchain_community.vectorstores import Chroma, FAISS
-from typing import List, Optional, Union
+from langchain_community.vectorstores import Pinecone
+from typing import List, Optional
 import os
 
 
@@ -17,36 +17,58 @@ class RAGPipeline:
     
     def __init__(
         self,
-        vectorstore: Union[Chroma, FAISS],
-        model_name: str = "gpt-3.5-turbo",
+        vectorstore: Pinecone,
+        model_name: str = None,
         temperature: float = 0.0,
-        top_k: int = 4
+        top_k: int = 4,
+        use_local_llm: bool = False,
+        local_llm_base_url: str = "http://localhost:1234/v1",
+        local_llm_api_key: str = "lm-studio"
     ):
         """
         Initialize RAG pipeline
         
         Args:
             vectorstore: Vector store instance
-            model_name: Name of the LLM model to use
+            model_name: Name of the LLM model to use (defaults based on use_local_llm)
             temperature: Temperature for LLM generation
             top_k: Number of documents to retrieve
+            use_local_llm: Whether to use local LM Studio instead of OpenAI
+            local_llm_base_url: Base URL for local LM Studio (default: http://localhost:1234/v1)
+            local_llm_api_key: API key for local LM Studio (default: "lm-studio")
         """
         self.vectorstore = vectorstore
         self.top_k = top_k
         
-        # Initialize LLM
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "OPENAI_API_KEY not found in environment variables. "
-                "Please set it in your .env file."
-            )
+        # Set default model name if not provided
+        if model_name is None:
+            model_name = "local-model" if use_local_llm else "gpt-3.5-turbo"
         
-        self.llm = ChatOpenAI(
-            model=model_name,
-            temperature=temperature,
-            openai_api_key=api_key
-        )
+        # Initialize LLM
+        if use_local_llm:
+            # Use local LM Studio
+            self.llm = ChatOpenAI(
+                model=model_name,
+                temperature=temperature,
+                base_url=local_llm_base_url,
+                api_key=local_llm_api_key
+            )
+            print(f"Using local LLM at {local_llm_base_url} with model: {model_name}")
+        else:
+            # Use OpenAI
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "OPENAI_API_KEY not found in environment variables. "
+                    "Please set it in your .env file or use use_local_llm=True."
+                )
+            
+            self.llm = ChatOpenAI(
+                model=model_name,
+                temperature=temperature,
+                openai_api_key=api_key
+            )
+            print(f"Using OpenAI with model: {model_name}")
         
         # Create prompt template
         self.prompt_template = ChatPromptTemplate.from_messages([
