@@ -7,7 +7,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
-from typing import List
+from typing import List, Union
 import os
 from pathlib import Path
 
@@ -56,7 +56,7 @@ class VectorStore:
         self,
         documents: List[Document],
         use_chroma: bool = True
-    ) -> Chroma | FAISS:
+    ) -> Union[Chroma, FAISS]:
         """
         Create vector store from documents
         
@@ -92,7 +92,7 @@ class VectorStore:
         
         return vectorstore
     
-    def load_vector_store(self, use_chroma: bool = True) -> Chroma | FAISS:
+    def load_vector_store(self, use_chroma: bool = True) -> Union[Chroma, FAISS]:
         """
         Load existing vector store
         

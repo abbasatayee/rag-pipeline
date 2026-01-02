@@ -8,7 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 from langchain_community.vectorstores import Chroma, FAISS
-from typing import List, Optional
+from typing import List, Optional, Union
 import os
 
 
@@ -17,7 +17,7 @@ class RAGPipeline:
     
     def __init__(
         self,
-        vectorstore: Chroma | FAISS,
+        vectorstore: Union[Chroma, FAISS],
         model_name: str = "gpt-3.5-turbo",
         temperature: float = 0.0,
         top_k: int = 4

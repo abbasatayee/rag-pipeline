@@ -18,7 +18,7 @@ def example_usage():
     # Step 1: Process PDF
     print("Step 1: Processing PDF...")
     pdf_processor = PDFProcessor(chunk_size=1000, chunk_overlap=200)
-    documents = pdf_processor.load_pdf("your_document.pdf")  # Replace with your PDF path
+    documents = pdf_processor.load_pdf("data/ancient-egypt.pdf")  # Replace with your PDF path
     
     # Step 2: Create vector store
     print("\nStep 2: Creating vector store...")
