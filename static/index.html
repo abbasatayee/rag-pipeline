@@ -1000,56 +1000,11 @@
             }
         }
 
-        function toggleQuestions() {
-            const questionsDiv = document.getElementById('suggestedQuestions');
-            questionsDiv.classList.toggle('collapsed');
-        }
-
-        function loadSuggestedQuestions() {
-            fetch(`${API_URL}/questions`)
-                .then(response => response.json())
-                .then(data => {
-                    const questionsContent = document.getElementById('questionsContent');
-                    if (data.questions && data.questions.length > 0) {
-                        questionsContent.innerHTML = data.questions.map((question, idx) => {
-                            const escapedQuestion = question.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                            return `<div class="question-item" data-question="${escapedQuestion}">${question}</div>`;
-                        }).join('');
-                        
-                        // Add click listeners to all question items
-                        questionsContent.querySelectorAll('.question-item').forEach(item => {
-                            item.addEventListener('click', function() {
-                                const question = this.getAttribute('data-question')
-                                    .replace(/&quot;/g, '"')
-                                    .replace(/&#39;/g, "'");
-                                selectQuestion(question);
-                            });
-                        });
-                    } else {
-                        questionsContent.innerHTML = '<div class="questions-loading">No questions available</div>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading questions:', error);
-                    const questionsContent = document.getElementById('questionsContent');
-                    questionsContent.innerHTML = '<div class="questions-loading">Unable to load questions</div>';
-                });
-        }
-
-        function selectQuestion(question) {
-            messageInput.value = question;
-            messageInput.focus();
-            // Add animation class
-            messageInput.classList.add('question-selected');
-            setTimeout(() => {
-                messageInput.classList.remove('question-selected');
-            }, 500);
-        }
+        
 
         // Focus input on load and load questions
         window.addEventListener('load', () => {
             messageInput.focus();
-            loadSuggestedQuestions();
         });
     </script>
 </body>
