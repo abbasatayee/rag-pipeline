@@ -154,7 +154,7 @@ Answer:"""),
             Dictionary with 'answer' and 'sources'
         """
         # Retrieve relevant documents
-        docs = self.vectorstore.similarity_search(question, k=self.top_k)
+        docs = self.vectorstore.similarity_search(question, k=self.top_k , threshold_on_relevance=True,score_threshold = 0.6)
         print(f"Retrieved {len(docs)} documents for the question.")
         # Get answer
         answer = self.query(question)
