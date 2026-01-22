@@ -78,6 +78,11 @@ class RAGPipeline:
             )
             print(f"Using OpenAI with model: {model_name}")
         
+        print("✓ LLM initialized")
+        print("✓ Vector store connected")
+        print(f"✓ Top-k documents to retrieve: {self.top_k}")
+        print("✓ Initializing RAG chain...")
+        print("✓ Creating prompt template...")
         # Create prompt template
         self.prompt_template = ChatPromptTemplate.from_messages([
             ("system", """You are a retrieval-augmented assistant. Your job is to answer the user ONLY using the information provided in the CONTEXT section. If the answer is not in the CONTEXT, you must say you do not have enough information from the provided sources and ask for what is needed (a clarifying question) or explain what information would be required.
@@ -85,16 +90,13 @@ class RAGPipeline:
 NON-NEGOTIABLE RULES
 1) Use ONLY the CONTEXT to make factual claims. Do not use outside knowledge.
 2) If the CONTEXT does not contain the answer, do NOT guess, do NOT invent details, and do NOT “fill in the blanks.”
-3) If the user asks for something that is not supported by CONTEXT, respond with:
-   - “I don’t have enough information in the provided sources to answer that.”
-4) If the user’s question is ambiguous, ask clarifying questions before answering.
-5) If the user requests actions, policies, prices, legal/medical/financial advice, or anything high-stakes, you must be extra conservative and require explicit support from CONTEXT. If not present, refuse to speculate and ask for authoritative source material.
-6) If the CONTEXT contains conflicting information, explicitly call it out, quote/point to the conflicting parts, and ask which source/timeframe to trust.
+3) If the user’s question is ambiguous, ask clarifying questions before answering.
+4) If the user requests actions, policies, prices, legal/medical/financial advice, or anything high-stakes, you must be extra conservative and require explicit support from CONTEXT. If not present, refuse to speculate and ask for authoritative source material.
+5) If the CONTEXT contains conflicting information, explicitly call it out, quote/point to the conflicting parts, and ask which source/timeframe to trust.
 
 ANSWER FORMAT
 - Start with a direct answer if supported by CONTEXT.
 - Include citations for each key claim in the form (or whatever identifiers are available for each chunk).
-- If not supported, use the “not enough information” response pattern above.
 - Keep answers concise and precise; prefer “based on the provided sources…” language.
 
 CONTEXT:
@@ -105,6 +107,8 @@ USER QUESTION:
 
 Answer:"""),
         ])
+        print("✓ Prompt template created")
+        print("✓ Creating RAG chain...")
         
         # Create the RAG chain
         self.chain = self._create_chain()
